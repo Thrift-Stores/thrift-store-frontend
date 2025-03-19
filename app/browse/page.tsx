@@ -28,7 +28,7 @@ export default function BrowsePage() {
               <SelectTrigger className="w-full md:w-[180px]">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white shadow-lg">
                 <SelectItem value="featured">Featured</SelectItem>
                 <SelectItem value="newest">Newest</SelectItem>
                 <SelectItem value="price-low">Price: Low to High</SelectItem>
