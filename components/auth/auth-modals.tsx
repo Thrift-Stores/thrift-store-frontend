@@ -98,7 +98,7 @@ export function AuthModals() {
 
     await dispatch(
       register({
-        name: signupName,
+        username: signupName,
         email: signupEmail,
         password: signupPassword,
       }),

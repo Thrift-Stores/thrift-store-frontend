@@ -4,7 +4,7 @@ import axios from "axios"
 const API_URL = "http://localhost:8080/api/auth"
 
 export interface RegisterData {
-  name: string
+  username: string
   email: string
   password: string
 }
