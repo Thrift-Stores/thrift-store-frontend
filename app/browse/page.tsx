@@ -10,13 +10,11 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import Header from "@/components/header/header"
-import Footer from "@/components/footer/footer"
 
 export default function BrowsePage() {
   return (
     <div className="flex min-h-screen flex-col">
-      <Header />
+
       <main className="flex-1">
         <div className="container mx-auto py-8 px-6">
           <div className="flex flex-col md:flex-row gap-4 mb-8">
@@ -256,7 +254,7 @@ export default function BrowsePage() {
           </div>
         </div>
       </main>
-      <Footer />
+
     </div>
   )
 }

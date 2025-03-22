@@ -22,8 +22,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import Header from "@/components/header/header"
-import Footer from "@/components/footer/footer"
 
 interface Product {
   id: string
@@ -73,7 +71,7 @@ export default function ProductClient({ product }: ProductClientProps) {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Header />
+
       <main className="flex-1 py-8">
         <div className="container mx-auto px-4">
           <div className="mb-6">
@@ -277,7 +275,7 @@ export default function ProductClient({ product }: ProductClientProps) {
           </div>
         </div>
       </main>
-      <Footer />
+
     </div>
   )
 } 

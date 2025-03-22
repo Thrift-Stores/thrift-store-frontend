@@ -18,9 +18,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
-import Header from "@/components/header/header"
-import Footer from "@/components/footer/footer"
-
 
 export default function SellPage() {
   const [images, setImages] = useState<string[]>([])
@@ -51,7 +48,7 @@ export default function SellPage() {
   return (
     <div className="flex min-h-screen flex-col">
 
-      <Header />
+     
       <main className="flex-1 py-10">
         <div className="container mx-auto max-w-4xl">
 
@@ -310,9 +307,6 @@ export default function SellPage() {
           </form>
         </div>
       </main>
-
-      <Footer />
-
     </div>
   )
 }

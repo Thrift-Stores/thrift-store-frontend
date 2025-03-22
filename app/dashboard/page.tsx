@@ -170,7 +170,7 @@ export default function Dashboard() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Header />
+      
 
       <div className="flex-1 container py-8">
         <div className="flex flex-col md:flex-row gap-8">
@@ -248,7 +248,7 @@ export default function Dashboard() {
             {activeTab === "overview" && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <h1 className="text-2xl font-bold">Welcome, {user?.name || user?.email || "User"}!</h1>
+                <h1 className="text-2xl font-bold">Welcome, {user?.username || user?.email || "User"}!</h1>
                   <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => router.push("/sell")}>
                     <Plus className="mr-2 h-4 w-4" />
                     Sell an Item
@@ -815,8 +815,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <Footer />
+      
     </div>
   )
 }
-

@@ -11,14 +11,12 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import Header from "@/components/header/header"
-import Footer from "@/components/footer/footer"
 
 export default function HomePage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Header />
+  
       <main className="flex-1">
         {/* Hero Section */}
         <section className="relative bg-gradient-to-r from-blue-600 to-blue-800 py-20 md:py-32 overflow-hidden">
@@ -511,7 +509,6 @@ export default function HomePage() {
           </div>
         </section>
       </main>
-      <Footer />
     </div>
   )
 }

@@ -4,6 +4,8 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { AuthModals } from "@/components/auth/auth-modals"
 import { Providers } from "./providers"
+import Header from "@/components/header/header"
+import Footer from "@/components/footer/footer"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -22,7 +24,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <Providers>
+          <Header/>
           {children}
+          <Footer/>
           <AuthModals />
         </Providers>
       </body>

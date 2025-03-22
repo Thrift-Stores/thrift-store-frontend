@@ -56,11 +56,10 @@ const Header = () => {
           </Link>
         </div>
         <nav
-          className={`${
-            isMobileMenuOpen
+          className={`${isMobileMenuOpen
               ? "absolute top-full left-0 right-0 bg-white border-b shadow-lg md:shadow-none md:border-none md:bg-transparent md:relative md:top-0"
               : "hidden"
-          } md:flex items-center gap-6`}
+            } md:flex items-center gap-6`}
         >
           <div className="flex flex-col md:flex-row items-center gap-6 p-4 md:p-0">
             <Link
@@ -95,7 +94,7 @@ const Header = () => {
             </Link>
 
             {/* Mobile auth buttons or user menu */}
-            {/* <div className="flex flex-col md:hidden w-full gap-2 mt-4">
+            <div className="flex flex-col md:hidden w-full gap-2 mt-4">
               {isAuthenticated ? (
                 <div className="flex flex-col gap-2 w-full">
                   <Link href="/dashboard" className="w-full">
@@ -142,10 +141,15 @@ const Header = () => {
                   </Button>
                 </>
               )}
-            </div> */}
+            </div>
           </div>
         </nav>
         <div className="flex items-center gap-4">
+          {isAuthenticated && (
+            <div className="hidden md:block">
+              <h3 className="text-lg font-semibold text-gray-700">{user?.username || user?.email || "User"}</h3>
+            </div>
+          )}
           {/* Desktop auth buttons or user menu */}
           {isAuthenticated ? (
             <DropdownMenu>
@@ -161,7 +165,7 @@ const Header = () => {
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">{user?.name}</p>
-                    <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+                    <h3 className="text-2xl font-bold">{user?.username || user?.email || "User"}!</h3>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
