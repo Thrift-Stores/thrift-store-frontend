@@ -1,4 +1,5 @@
-import Link from "next/link"
+"use client";
+
 import Image from "next/image"
 import { Search, Filter } from "lucide-react"
 
@@ -10,8 +11,56 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { BACKEND_URL } from "@/config/config";
+import { useRouter } from "next/navigation";
+interface Product {
+  _id : string;
+  title: string;
+  description: string;
+  category: "books" | "electronics" | "cycles" | "hostel essentials" | "projects" | "other";
+  condition: "like new" | "good" | "fair" | "poor";
+  saletype: "fixed price" | "auction" | "open to offers";
+  price?: number;
+  images?: string[];
+  contactMethod: "phone" | "email" | "both";
+  phone?: string;
+  email?: string;
+  owner: {
+    username : string;
+    email : string;
+  }
+  meetingLocation: string;
+  createdAt: Date;
+}
 
 export default function BrowsePage() {
+  const [products, setProducts] = useState<Product[]>([]);
+
+  const [totalPages, setTotalPages] = useState(1);
+  const [page, setPage] = useState(1);
+  const router = useRouter();
+
+  useEffect(()=> {
+      const getProducts = async()=>{
+        try {
+          const res = await axios.get(`${BACKEND_URL}/api/product?page=${page}&limit=8`);
+
+          if(res?.data?.success){
+            setProducts(res?.data?.data);
+            setTotalPages(res?.data?.totalPages);
+          }
+        } catch (error) {
+          console.log(error);
+          
+        }
+      };
+      getProducts();
+  },[page]);
+
+  console.log(products);
+  
   return (
     <div className="flex min-h-screen flex-col">
 
@@ -145,111 +194,102 @@ export default function BrowsePage() {
                 <div className="text-sm text-muted-foreground">Showing 12 of 48 results</div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {Array.from({ length: 12 }).map((_, index) => (
-                  <Card key={index} className="overflow-hidden">
-                    <div className="relative">
-                      <Image
-                        src={`/placeholder.svg?height=200&width=300`}
-                        alt="Product image"
-                        width={300}
-                        height={200}
-                        className="w-full h-48 object-cover"
-                      />
-                      {index % 3 === 0 && (
-                        <Badge className="absolute top-2 right-2 bg-orange-500 hover:bg-orange-600">Sale</Badge>
-                      )}
-                      {index % 5 === 0 && (
-                        <Badge className="absolute top-2 right-2 bg-blue-500 hover:bg-blue-600">Auction</Badge>
-                      )}
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {products.length > 0 ? (
+              products.map((product) => (
+                <Card key={product._id} className="p-4 shadow-lg rounded-lg">
+                  {product.images?.length ? (
+                    <Image
+                      src={product.images[0]}
+                      alt={product.title}
+                      width={200}
+                      height={200}
+                      className="w-full h-40 object-cover rounded-md"
+                    />
+                  ) : (
+                    <div className="w-full h-40 bg-gray-200 rounded-md flex items-center justify-center">
+                      <span className="text-gray-500">No Image</span>
                     </div>
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-semibold">
-                          {index % 4 === 0 && "Calculus Textbook"}
-                          {index % 4 === 1 && "HP Laptop i5"}
-                          {index % 4 === 2 && "Mountain Bike"}
-                          {index % 4 === 3 && "Study Desk Lamp"}
-                        </h3>
-                        <span className="font-bold text-blue-600">
-                          {index % 4 === 0 && "₹450"}
-                          {index % 4 === 1 && "₹22,000"}
-                          {index % 4 === 2 && "₹3,500"}
-                          {index % 4 === 3 && "₹750"}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        {index % 4 === 0 && "Almost new, 3rd edition with all practice problems"}
-                        {index % 4 === 1 && "8GB RAM, 512GB SSD, 2 years old, good condition"}
-                        {index % 4 === 2 && "21-speed, front suspension, minor scratches"}
-                        {index % 4 === 3 && "Adjustable brightness, USB charging port"}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <Badge variant="outline" className="text-xs">
-                          {index % 4 === 0 && "Books"}
-                          {index % 4 === 1 && "Electronics"}
-                          {index % 4 === 2 && "Cycles"}
-                          {index % 4 === 3 && "Hostel"}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {index % 3 === 0 && "Posted 2 days ago"}
-                          {index % 3 === 1 && "5 bids"}
-                          {index % 3 === 2 && "Ends in 6 hours"}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                  )}
+                  <CardContent className="p-2">
+                    <h3 className="font-semibold text-lg">{product.title}</h3>
+                    <div className="flex items-center justify-between mt-3">
+                      <Badge variant="outline">{product.category}</Badge>
+                      <span className="font-semibold text-primary">₹{product.price || "N/A"}</span>
+                    </div>
+                    <Button variant="default" className="w-full mt-3" onClick={()=>router.push(`/product/${product._id}`)}>View Details</Button>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <p className="text-center col-span-full text-gray-500">No products found.</p>
+            )}
+          </div>
 
-              <div className="flex justify-center mt-8">
-                <div className="flex items-center space-x-2">
-                  <Button variant="outline" size="icon" disabled>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-4 w-4"
-                    >
-                      <polyline points="15 18 9 12 15 6" />
-                    </svg>
-                  </Button>
-                  <Button variant="outline" size="sm" className="bg-blue-600 text-white hover:bg-blue-700">
-                    1
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    2
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    3
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    4
-                  </Button>
-                  <Button variant="outline" size="icon">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-4 w-4"
-                    >
-                      <polyline points="9 18 15 12 9 6" />
-                    </svg>
-                  </Button>
-                </div>
-              </div>
+          <div className="flex justify-center mt-8">
+      <div className="flex items-center space-x-2">
+        {/* Previous Button */}
+        <Button
+          variant="outline"
+          size="icon"
+          disabled={page === 1}
+          onClick={() => setPage(p=>p-1)}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-4 w-4"
+          >
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </Button>
+
+        {/* Page Numbers */}
+        {Array.from({ length: totalPages }, (_, index) => (
+          <Button
+            key={index + 1}
+            variant="outline"
+            size="sm"
+            className={`${
+              page === index + 1 ? "bg-blue-600 text-white hover:bg-blue-700" : ""
+            }`}
+            onClick={() => setPage(index+1)}
+          >
+            {index + 1}
+          </Button>
+        ))}
+
+        {/* Next Button */}
+        <Button
+          variant="outline"
+          size="icon"
+          disabled={page === totalPages}
+          onClick={() => setPage((p)=>p+1)}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-4 w-4"
+          >
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </Button>
+      </div>
+    </div>
             </div>
           </div>
         </div>
@@ -258,4 +298,3 @@ export default function BrowsePage() {
     </div>
   )
 }
-

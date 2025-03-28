@@ -74,11 +74,11 @@ export function AuthModals() {
       })
 
       // Close modals
-      setLoginOpen(false)
-      setSignupOpen(false)
+      setLoginOpen(false);
+      setSignupOpen(false);
 
       // Redirect to dashboard or home page
-      router.push("/dashboard")
+      // router.push("/dashboard")
     }
   }, [isAuthenticated, router, toast])
 

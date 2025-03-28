@@ -92,10 +92,10 @@ export default function SellPage() {
 
                       <Label htmlFor="category">Category</Label>
                       <Select required>
-                        <SelectTrigger id="category">
+                        <SelectTrigger id="category" >
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-white">
                           <SelectItem value="books">Books & Notes</SelectItem>
                           <SelectItem value="electronics">Electronics</SelectItem>
                           <SelectItem value="cycles">Cycles</SelectItem>
@@ -112,7 +112,7 @@ export default function SellPage() {
                         <SelectTrigger id="condition">
                           <SelectValue placeholder="Select condition" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-white">
                           <SelectItem value="new">Like New</SelectItem>
                           <SelectItem value="good">Good</SelectItem>
                           <SelectItem value="fair">Fair</SelectItem>

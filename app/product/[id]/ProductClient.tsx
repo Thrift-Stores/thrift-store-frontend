@@ -30,11 +30,11 @@ interface Product {
   description: string
   condition: string
   category: string
-  seller: {
-    name: string
+  owner: {
+    username: string
     rating: number
-    joinedDate: string
-    responseRate: string
+    // joinedDate: string
+    // responseRate: string
   }
   location: string
   postedDate: string
@@ -194,11 +194,11 @@ export default function ProductClient({ product }: ProductClientProps) {
                   <div>
                     <h2 className="font-semibold mb-2">Seller Information</h2>
                     <div className="space-y-1">
-                      <p className="font-medium">{product.seller.name}</p>
+                      <p className="font-medium">{product?.owner?.username}</p>
                       <p className="text-sm text-muted-foreground">
-                        Rating: {product.seller.rating} • Member since {product.seller.joinedDate}
+                        {/* Rating: {product.seller.rating} • Member since {product.seller.joinedDate} */}
                       </p>
-                      <p className="text-sm text-muted-foreground">Response rate: {product.seller.responseRate}</p>
+                      {/* <p className="text-sm text-muted-foreground">Response rate: {product.seller.responseRate}</p> */}
                     </div>
                   </div>
                 </div>
@@ -250,7 +250,7 @@ export default function ProductClient({ product }: ProductClientProps) {
                       <DialogHeader>
                         <DialogTitle>Message the Seller</DialogTitle>
                         <DialogDescription>
-                          Send a message to {product.seller.name} about this item.
+                          {/* Send a message to {product.seller.name} about this item. */}
                         </DialogDescription>
                       </DialogHeader>
                       <form onSubmit={handleMessageSubmit}>
