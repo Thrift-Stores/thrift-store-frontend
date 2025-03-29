@@ -163,9 +163,6 @@ export default function SellPage() {
     e.preventDefault()
     // Here you would normally send the data to your backend
     console.log("Submitted data:", product)
-    setSubmitted(true);
-    console.log(files);
-    
     // Reset form or redirect
 
     let toastId = toast.loading("Uploading Images...");

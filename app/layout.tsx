@@ -6,6 +6,7 @@ import { AuthModals } from "@/components/auth/auth-modals"
 import { Providers } from "./providers"
 import Header from "@/components/header/header"
 import Footer from "@/components/footer/footer"
+import { Toaster } from "@/components/ui/sonner"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -25,6 +26,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <Providers>
           <Header/>
+          <Toaster richColors/>
           {children}
           <Footer/>
           <AuthModals />

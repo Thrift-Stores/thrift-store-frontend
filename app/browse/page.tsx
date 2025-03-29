@@ -191,7 +191,7 @@ export default function BrowsePage() {
             <div className="md:col-span-3">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold">Browse Products</h2>
-                <div className="text-sm text-muted-foreground">Showing 12 of 48 results</div>
+                <div className="text-sm text-muted-foreground">Showing {page} of {totalPages} results</div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
