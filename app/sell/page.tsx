@@ -17,32 +17,198 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { toast } from "sonner"
+import { BACKEND_URL } from "@/config/config"
+import axios from "axios"
+import { useRouter } from "next/navigation"
 
 
 export default function SellPage() {
   const [images, setImages] = useState<string[]>([])
   const [listingType, setListingType] = useState("fixed")
-  const [submitted, setSubmitted] = useState(false)
+  const [files, setFiles] = useState<File[]>([]);
+  const [submitted, setSubmitted] = useState(false);
+
+  const [product, setProduct] = useState({
+    title : "",
+    description : "",
+    category : "",
+    price : 0,
+    condition : "",
+    saletype : "fixed price",
+    contactMethod : "",
+    phone : "",
+    meetingLocation : "",
+    email : "",
+    images : [""],
+  });
+  const router = useRouter();
+
+  const handleImageRemove = (index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index))
+  }
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const newImages = Array.from(e.target.files).map((file) => URL.createObjectURL(file))
-      setImages((prev) => [...prev, ...newImages])
+    const selectedFiles = e.target.files;
+    if (selectedFiles) {
+      const maxSize = 5 * 1024 * 1024; // 5MB
+
+      for (const file of selectedFiles) {
+        if (file.size > maxSize) {
+          toast.error(`File size must not exceed 5MB.`);
+          return;
+        }
+      }
+
+      const newImages = Array.from(selectedFiles).map((file) =>
+        URL.createObjectURL(file)
+      );
+      setImages([...images, ...newImages]);
+      setFiles((f) => [...f, ...selectedFiles]);
     }
   }
 
   const removeImage = (index: number) => {
     setImages((prev) => prev.filter((_, i) => i !== index))
-  }
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const getSignedURLs = async () => {
+    const filenames = files.map((f) => {
+      return {
+        name: f.name,
+        type: f.type
+      };
+    });
+    
+    console.log(`filenames`, filenames);
+    
+    try {
+      const res = await axios.post(
+        `${BACKEND_URL}/api/product/pre-signed-urls`,
+        { filenames },
+        {
+          withCredentials: true,
+        }
+      );
+
+      return res.data?.signedUrls;
+      
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const uploadFiles = async (preSignedUrls: { uploadUrl: string; publicUrl: string }[]) => {
+    try {
+      if (!files || files.length === 0) {
+        console.error("No files selected for upload.");
+        return;
+      }
+  
+      const uploadPromises = files?.map(async (file, index) => {
+        console.log(file);
+        console.log(preSignedUrls[index].uploadUrl);
+        
+        
+        if (!preSignedUrls[index]) {
+          console.error(`No pre-signed URL for file: ${file.name}`);
+          return;
+        }
+  
+        const { uploadUrl } = preSignedUrls[index];
+  
+        try {
+          // const response = await fetch(uploadUrl, {
+          //   method: "PUT",
+          //   body: file,
+          //   headers: {
+          //     "Content-Type": file.type,
+          //     "x-goog-acl": "public-read", 
+          //   },
+          // });
+          const response = await axios.put(uploadUrl, file, {
+            headers : {
+              "Content-Type" : file.type,
+            }
+          })
+
+          console.log("res" , response);
+          
+  
+          // if (!response.ok) {
+          //   throw new Error(`Failed to upload ${file.name}: ${response.statusText}`);
+          // }
+  
+          console.log(`Uploaded ${file.name} successfully`);
+        } catch (error) {
+          console.error(`Error uploading ${file.name}:`, error);
+        }
+      });
+  
+      await Promise.all(uploadPromises);
+      console.log("All uploads completed.");
+    } catch (error) {
+      console.error("Error uploading files:", error);
+    }
+  };
+  
+
+  const getImageUrls = (preSignedUrls: { uploadUrl: string, publicUrl : string }[]) => {
+    return preSignedUrls.map(({publicUrl}) => {
+      return publicUrl;
+    });
+  };
+
+  const handleSubmit = async(e: React.FormEvent) => {
     e.preventDefault()
     // Here you would normally send the data to your backend
-    setSubmitted(true)
+    console.log("Submitted data:", product)
+    setSubmitted(true);
+    console.log(files);
+    
     // Reset form or redirect
-    setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: "smooth" })
-    }, 500)
+
+    let toastId = toast.loading("Uploading Images...");
+
+    try {
+      const urls = await getSignedURLs();
+      console.log(urls);
+      
+     try {
+      await uploadFiles(urls);
+     } catch (error) {
+      console.log(error);
+      return;
+      
+     }
+      toast.dismiss(toastId);
+      toast.success("Upload Successful!", {
+        description: "Your files have been uploaded successfully.",
+      });
+
+      toastId = toast.loading("Saving Product...");
+
+      product.images = getImageUrls(urls);
+
+      const res = await axios.post(`${BACKEND_URL}/api/product`, product, {
+        withCredentials: true,
+      });
+      console.log(res);
+      
+
+      if (res?.data?.success) {
+        toast.success(res?.data?.message);
+        router.push("/browse");
+      }
+    } catch (error) {
+      // handleAxiosError(error);
+      console.log(error);
+    } finally {
+      toast.dismiss(toastId);
+    }
+    // setTimeout(() => {
+    //   window.scrollTo({ top: 0, behavior: "smooth" })
+    // }, 500)
   }
 
   return (
@@ -73,7 +239,8 @@ export default function SellPage() {
                 <div className="space-y-4">
                   <div className="grid gap-2">
                     <Label htmlFor="title">Title</Label>
-                    <Input id="title" placeholder="e.g., Calculus Textbook 3rd Edition" required />
+                    <Input id="title" placeholder="e.g., Calculus Textbook 3rd Edition" name="title" value={product.title}
+                    onChange={(e)=>setProduct(p=> ({...p , [e.target.name] : e.target.value}))} required />
                   </div>
 
                   <div className="grid gap-2">
@@ -82,6 +249,8 @@ export default function SellPage() {
                       id="description"
                       placeholder="Describe your item's condition, features, and any other relevant details..."
                       className="min-h-[120px]"
+                      name="description" value={product.description}
+                    onChange={(e)=>setProduct(p=> ({...p , [e.target.name] : e.target.value}))}
                       required
                     />
                   </div>
@@ -91,9 +260,9 @@ export default function SellPage() {
                     <div className="grid gap-2 bg-white">
 
                       <Label htmlFor="category">Category</Label>
-                      <Select required>
+                      <Select required value={product.category} onValueChange={(value) => setProduct(p => ({ ...p, category: value }))}>
                         <SelectTrigger id="category" >
-                          <SelectValue placeholder="Select category" />
+                          <SelectValue placeholder="Select category"/>
                         </SelectTrigger>
                         <SelectContent className="bg-white">
                           <SelectItem value="books">Books & Notes</SelectItem>
@@ -108,12 +277,12 @@ export default function SellPage() {
 
                     <div className="grid gap-2">
                       <Label htmlFor="condition">Condition</Label>
-                      <Select required>
+                      <Select required value={product.condition} onValueChange={(value) => setProduct(p => ({ ...p, condition: value }))}>
                         <SelectTrigger id="condition">
                           <SelectValue placeholder="Select condition" />
                         </SelectTrigger>
                         <SelectContent className="bg-white">
-                          <SelectItem value="new">Like New</SelectItem>
+                          <SelectItem value="like new">Like New</SelectItem>
                           <SelectItem value="good">Good</SelectItem>
                           <SelectItem value="fair">Fair</SelectItem>
                           <SelectItem value="poor">Poor</SelectItem>
@@ -129,7 +298,7 @@ export default function SellPage() {
               <CardContent className="p-6">
                 <h2 className="text-xl font-semibold mb-4">Listing Details</h2>
                 <div className="space-y-6">
-                  <div className="space-y-4">
+                  {/* <div className="space-y-4">
                     <Label>Listing Type</Label>
                     <RadioGroup defaultValue="fixed" value={listingType} onValueChange={setListingType}>
                       <div className="flex flex-col space-y-2">
@@ -153,7 +322,7 @@ export default function SellPage() {
                         </div>
                       </div>
                     </RadioGroup>
-                  </div>
+                  </div> */}
 
                   <Separator />
 
@@ -174,7 +343,7 @@ export default function SellPage() {
                           </TooltipProvider>
                         )}
                       </div>
-                      <Input id="price" type="number" min="0" step="1" placeholder="e.g., 500" required />
+                      <Input id="price" type="number" min="0" step="1" placeholder="e.g., 500" value={product.price} onChange={(e)=>setProduct(p=>({...p , price : Number( e.target.value)}))} required />
                     </div>
 
                     {listingType === "auction" && (
@@ -231,7 +400,7 @@ export default function SellPage() {
                             <Upload className="h-8 w-8 mb-2 text-muted-foreground" />
                             <span className="text-xs text-muted-foreground">Upload Image</span>
                           </div>
-                          <Input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                          <Input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} multiple/>
                         </label>
                       )}
                     </div>
@@ -244,49 +413,71 @@ export default function SellPage() {
             </Card>
 
             <Card>
-              <CardContent className="p-6">
-                <h2 className="text-xl font-semibold mb-4">Contact Information</h2>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold mb-4">Contact Information</h2>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="contact-method">Preferred Contact Method</Label>
+                        <Select required value={product.contactMethod} onValueChange={(value) => setProduct(p => ({ ...p, contactMethod: value }))}>
+                          <SelectTrigger id="contact-method">
+                            <SelectValue placeholder="Select method" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white">
+                            <SelectItem value="both">Both</SelectItem>
+                            <SelectItem value="phone">Phone Call</SelectItem>
+                            <SelectItem value="email">Email</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {product.contactMethod === "phone" && (
+                        <div className="grid gap-2">
+                          <Label>Phone</Label>
+                          <Input value={product.phone} onChange={(e)=>setProduct((p)=>({...p, phone : e.target.value}))} />
+                        </div>
+                      )}
+                      {product.contactMethod === "email" && (
+                        <div className="grid gap-2">
+                          <Label>Email</Label>
+                          <Input value={product.email} onChange={(e)=>setProduct((p)=>({...p, email : e.target.value}))} />
+                        </div>
+                      )}
+                      {product.contactMethod === "both" && (
+                        <>
+                          {(
+                            <div className="grid gap-2">
+                              <Label>Phone</Label>
+                              <Input value={product.phone} onChange={(e)=>setProduct((p)=>({...p, phone : e.target.value}))} />
+                            </div>
+                          )}
+                          {(
+                            <div className="grid gap-2">
+                              <Label>Email</Label>
+                              <Input value={product.email} onChange={(e)=>setProduct((p)=>({...p, email : e.target.value}))} />
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="contact-method">Preferred Contact Method</Label>
-                      <Select required>
-                        <SelectTrigger id="contact-method">
-                          <SelectValue placeholder="Select method" />
+                      <Label htmlFor="meeting-location">Preferred Meeting Location</Label>
+                      <Select required value={product.meetingLocation} onValueChange={(value) => setProduct(p => ({ ...p, meetingLocation: value }))}>
+                        <SelectTrigger id="meeting-location">
+                          <SelectValue placeholder="Select location" />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="app">In-App Messaging</SelectItem>
-                          <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                          <SelectItem value="phone">Phone Call</SelectItem>
-                          <SelectItem value="email">Email</SelectItem>
+                        <SelectContent className="bg-white">
+                          <SelectItem value="library">University Library</SelectItem>
+                          <SelectItem value="cafeteria">Main Cafeteria</SelectItem>
+                          <SelectItem value="student-center">Student Center</SelectItem>
+                          <SelectItem value="hostel">Hostel Common Area</SelectItem>
+                          <SelectItem value="other">Other (Specify in Description)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-
-                    <div className="grid gap-2">
-                      <Label htmlFor="contact-info">Contact Information</Label>
-                      <Input id="contact-info" placeholder="e.g., Phone number or email" required />
-                    </div>
                   </div>
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="meeting-location">Preferred Meeting Location</Label>
-                    <Select required>
-                      <SelectTrigger id="meeting-location">
-                        <SelectValue placeholder="Select location" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="library">University Library</SelectItem>
-                        <SelectItem value="cafeteria">Main Cafeteria</SelectItem>
-                        <SelectItem value="student-center">Student Center</SelectItem>
-                        <SelectItem value="hostel">Hostel Common Area</SelectItem>
-                        <SelectItem value="other">Other (Specify in Description)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+          
 
             <div className="flex flex-col space-y-4">
               <Button type="submit" size="lg" className="bg-blue-600 hover:bg-blue-700">

@@ -33,7 +33,9 @@ export interface AuthResponse {
 export const authService = {
   register: async (userData: RegisterData): Promise<AuthResponse> => {
     try {
-      const response = await axios.post(`${API_URL}/register`, userData);
+      const response = await axios.post(`${API_URL}/register`, userData, {
+        withCredentials : true
+      });
       if (response.data.success) {
         localStorage.setItem("user", JSON.stringify(response.data.user));
         localStorage.setItem("token", response.data.token);
@@ -49,7 +51,9 @@ export const authService = {
 
   login: async (userData: LoginData): Promise<AuthResponse> => {
     try {
-      const response = await axios.post(`${API_URL}/login`, userData);
+      const response = await axios.post(`${API_URL}/login`, userData, {
+        withCredentials : true
+      });
       if (response.data.success) {
         localStorage.setItem("user", JSON.stringify(response.data.user));
         localStorage.setItem("token", response.data.token);
