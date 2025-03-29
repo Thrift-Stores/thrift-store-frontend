@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { ArrowLeft, Heart, Share2, MessageCircle, AlertTriangle, Check } from "lucide-react"
+import { ArrowLeft, Heart, Share2, MessageCircle, AlertTriangle, Check, Phone, Mail } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -32,9 +32,8 @@ interface Product {
   category: string
   owner: {
     username: string
-    rating: number
-    // joinedDate: string
-    // responseRate: string
+    email: string
+    phone?: string
   }
   location: string
   postedDate: string
@@ -44,6 +43,8 @@ interface Product {
   bidCount: number
   endTime: string
   images: string[]
+  contactMethod: "phone" | "email" | "both"
+  meetingLocation: string
 }
 
 interface ProductClientProps {
@@ -56,6 +57,7 @@ export default function ProductClient({ product }: ProductClientProps) {
   const [bidSubmitted, setBidSubmitted] = useState(false)
   const [messageText, setMessageText] = useState("")
   const [messageSent, setMessageSent] = useState(false)
+  const [showContactDetails, setShowContactDetails] = useState(false)
 
   const handleBidSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -67,6 +69,10 @@ export default function ProductClient({ product }: ProductClientProps) {
     e.preventDefault()
     setMessageSent(true)
     setMessageText("")
+  }
+
+  const handleBuyClick = () => {
+    setShowContactDetails(true)
   }
 
   return (
@@ -205,37 +211,76 @@ export default function ProductClient({ product }: ProductClientProps) {
 
                 <Separator className="my-4" />
 
-                {product.isAuction && (
-                  <div className="space-y-4">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button className="w-full bg-blue-600 hover:bg-blue-700">Place Bid</Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Place a Bid</DialogTitle>
-                          <DialogDescription>
-                            Current bid is ₹{product.currentBid.toLocaleString()}. Your bid must be higher.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <form onSubmit={handleBidSubmit}>
-                          <div className="space-y-4 py-4">
-                            <div className="space-y-2">
-                              <Input
-                                type="number"
-                                placeholder="Enter your bid amount"
-                                value={bidAmount}
-                                onChange={(e) => setBidAmount(e.target.value)}
-                              />
-                            </div>
+                {product.isAuction ? (
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button className="w-full bg-blue-600 hover:bg-blue-700">Place Bid</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Place a Bid</DialogTitle>
+                        <DialogDescription>
+                          Current bid is ₹{product.currentBid.toLocaleString()}. Your bid must be higher.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <form onSubmit={handleBidSubmit}>
+                        <div className="space-y-4 py-4">
+                          <div className="space-y-2">
+                            <Input
+                              type="number"
+                              placeholder="Enter your bid amount"
+                              value={bidAmount}
+                              onChange={(e) => setBidAmount(e.target.value)}
+                            />
                           </div>
-                          <DialogFooter>
-                            <Button type="submit">Submit Bid</Button>
-                          </DialogFooter>
-                        </form>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
+                        </div>
+                        <DialogFooter>
+                          <Button type="submit">Submit Bid</Button>
+                        </DialogFooter>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                ) : (
+                  <Dialog open={showContactDetails} onOpenChange={setShowContactDetails}>
+                    <DialogTrigger asChild>
+                      <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={handleBuyClick}>
+                        Buy Now
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Seller Contact Details</DialogTitle>
+                        <DialogDescription>
+                          Contact the seller to arrange the purchase and meeting.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                          <h3 className="font-semibold">Seller Information</h3>
+                          <p className="text-sm text-muted-foreground">{product.owner.username}</p>
+                        </div>
+                        <div className="space-y-2">
+                          <h3 className="font-semibold">Contact Methods</h3>
+                          {(product.contactMethod === "phone" || product.contactMethod === "both") && (
+                            <div className="flex items-center gap-2">
+                              <Phone className="h-4 w-4" />
+                              <span className="text-sm">{product.owner.phone}</span>
+                            </div>
+                          )}
+                          {(product.contactMethod === "email" || product.contactMethod === "both") && (
+                            <div className="flex items-center gap-2">
+                              <Mail className="h-4 w-4" />
+                              <span className="text-sm">{product.owner.email}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <h3 className="font-semibold">Meeting Location</h3>
+                          <p className="text-sm text-muted-foreground">{product.meetingLocation}</p>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 )}
 
                 <div className="mt-4">
@@ -250,7 +295,7 @@ export default function ProductClient({ product }: ProductClientProps) {
                       <DialogHeader>
                         <DialogTitle>Message the Seller</DialogTitle>
                         <DialogDescription>
-                          {/* Send a message to {product.seller.name} about this item. */}
+                          Send a message to {product.owner.username} about this item.
                         </DialogDescription>
                       </DialogHeader>
                       <form onSubmit={handleMessageSubmit}>
