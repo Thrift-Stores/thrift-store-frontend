@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { AutoSlider } from "@/components/AutoSlider"
 
 interface Product {
   _id: string;
@@ -152,6 +153,139 @@ export default function HomePage() {
           <div className="absolute top-1/4 left-10 w-20 h-20 rounded-full bg-blue-400/20 animate-float"></div>
           <div className="absolute bottom-1/4 right-10 w-32 h-32 rounded-full bg-orange-400/20 animate-float-delay"></div>
           <div className="absolute top-3/4 left-1/3 w-16 h-16 rounded-full bg-white/10 animate-float-delay-long"></div>
+        </section>
+
+        {/* Animated shapes */}
+        <section className="py-8">
+          <div className="container">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Main Slider */}
+              <div className="col-span-1">
+                <AutoSlider 
+                  items={[
+                    {
+                      id: 1,
+                      image: "https://m.media-amazon.com/images/G/31/img24/intel/JAN/Amazon_JanBAU_Gaming2_1400x800._SX1242_QL85_.jpg",
+                      title: "Electronics Sale",
+                      link: "/browse?category=electronics",
+                      type: "product"
+                    },
+                    {
+                      id: 2,
+                      image: "https://www.savethestudent.org/uploads/colourful-patterned-books-bright-background.jpg",
+                      title: "Textbook Exchange",
+                      link: "/browse?category=books",
+                      type: "product"
+                    },
+                    {
+                      id: 3,
+                      image: "https://cycleworld.in/wp-content/uploads/2024/10/Social-media-post-Website.png",
+                      title: "Campus Cycles",
+                      link: "/browse?category=cycles",
+                      type: "product"
+                    },
+                    {
+                      id: 4,
+                      image: "https://cdn.packhacker.com/2022/12/ec390fd9-featured-image-full-flatlay.jpg?auto=compress&auto=format&w=1110&h=740&fit=crop",
+                      title: "Hostel Essentials",
+                      link: "/browse?category=hostel",
+                      type: "product"
+                    }
+                  ]} 
+                  className="mb-8" 
+                  interval={3000}
+                />
+              </div>
+
+              {/* Brand Slider */}
+              <div className="col-span-1">
+                <AutoSlider 
+                  items={[
+                    {
+                      id: 1,
+                      image: "https://pbs.twimg.com/media/GWHR9prbYAAvwS7.jpg:large",
+                      title: "Tech Essentials",
+                      link: "/browse?brand=tech",
+                      type: "brand"
+                    },
+                    {
+                      id: 2,
+                      image: "https://allindiamathematics.com/wp-content/uploads/2021/06/Does-the-IDP-or-British-Council-Provide-Study-Material.jpg",
+                      title: "Study Materials",
+                      link: "/browse?brand=books",
+                      type: "brand"
+                    },
+                    {
+                      id: 3,
+                      image: "https://m.media-amazon.com/images/G/31/img23/CEPC/OTC/changes/OTC_Lifestyle_1400-x-800._CB556475954_.gif",
+                      title: "Campus Lifestyle",
+                      link: "/browse?brand=lifestyle",
+                      type: "brand"
+                    },
+                    {
+                      id: 4,
+                      image: "https://webflow-amber-prod.gumlet.io/620e4101b2ce12a1a6bff0e8/643c489a16b3d0001e1736ba_Header_Top%2010%20Essential%20Gadgets%20for%20Students_MAR23.webp",
+                      title: "Student Accessories",
+                      link: "/browse?brand=accessories",
+                      type: "brand"
+                    }
+                  ]} 
+                  className="mb-8" 
+                  interval={3000}
+                />
+              </div>
+            </div>
+
+            {/* Top Sales Grid */}
+            <div className="mt-8">
+              <h2 className="text-2xl font-bold mb-4">Top Sales</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                  {
+                    id: 1,
+                    image: "https://static.independent.co.uk/2023/03/27/16/Laptops%20Offer%20Artwork.jpg",
+                    title: "Laptops",
+                    link: "/browse?category=electronics&sort=price&order=desc"
+                  },
+                  {
+                    id: 2,
+                    image: "https://www.britishcouncil.in/sites/default/files/book_sale_4.jpg",
+                    title: "Textbooks",
+                    link: "/browse?category=books&sort=price&order=desc"
+                  },
+                  {
+                    id: 3,
+                    image: "https://5.imimg.com/data5/ANDROID/Default/2021/8/QS/PF/NX/88209404/product-jpeg-500x500.jpg",
+                    title: "Cycles",
+                    link: "/browse?category=cycles&sort=price&order=desc"
+                  },
+                  {
+                    id: 4,
+                    image: "https://media.licdn.com/dms/image/v2/D4D12AQG2jMnE6VTJNA/article-cover_image-shrink_600_2000/article-cover_image-shrink_600_2000/0/1692181683749?e=2147483647&v=beta&t=ZnpXLNxwpHFIxjRbQMQmL0Kl8K5zko6Nh2f_s8SI968",
+                    title: "Accessories",
+                    link: "/browse?category=accessories&sort=price&order=desc"
+                  }
+                ].map((item) => (
+                  <Link 
+                    key={item.id} 
+                    href={item.link}
+                    className="group relative overflow-hidden rounded-lg aspect-[3/2]"
+                  >
+                    <Image
+                      src={item.image}
+                      alt={item.title}
+                      fill
+                      className="object-cover transition-transform duration-300 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                    <div className="absolute bottom-0 left-0 p-4">
+                      <h3 className="text-white font-semibold">{item.title}</h3>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* Categories Section */}

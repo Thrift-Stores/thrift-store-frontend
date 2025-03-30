@@ -33,7 +33,7 @@ interface Product {
   owner: {
     username: string
     email: string
-    phone?: string
+    phone: string
   }
   location: string
   postedDate: string
@@ -201,6 +201,7 @@ export default function ProductClient({ product }: ProductClientProps) {
                     <h2 className="font-semibold mb-2">Seller Information</h2>
                     <div className="space-y-1">
                       <p className="font-medium">{product?.owner?.username}</p>
+                      
                       <p className="text-sm text-muted-foreground">
                         {/* Rating: {product.seller.rating} • Member since {product.seller.joinedDate} */}
                       </p>
@@ -257,19 +258,26 @@ export default function ProductClient({ product }: ProductClientProps) {
                       <div className="space-y-4 py-4">
                         <div className="space-y-2">
                           <h3 className="font-semibold">Seller Information</h3>
+                          <h3 className="font-semibold">Contact Methods</h3>
+                          <div className="flex items-center gap-2">
+                              <Phone className="h-4 w-4" />
+                              <span className="text-sm">{product.phone}</span>
+                            </div>
+                  <h3 className="font-semibold">Seller Name </h3>
                           <p className="text-sm text-muted-foreground">{product.owner.username}</p>
                         </div>
                         <div className="space-y-2">
-                          <h3 className="font-semibold">Contact Methods</h3>
-                          {(product.contactMethod === "phone" || product.contactMethod === "both") && (
+                          <h3 className="font-semibold"></h3>
+                          {(product.contactMethod === "phone" || product.contactMethod === "both") && product.owner.phone && (
                             <div className="flex items-center gap-2">
                               <Phone className="h-4 w-4" />
                               <span className="text-sm">{product.owner.phone}</span>
                             </div>
                           )}
-                          {(product.contactMethod === "email" || product.contactMethod === "both") && (
+                          {(product.contactMethod === "email" || product.contactMethod === "both") && product.owner.email && (
                             <div className="flex items-center gap-2">
                               <Mail className="h-4 w-4" />
+                             
                               <span className="text-sm">{product.owner.email}</span>
                             </div>
                           )}

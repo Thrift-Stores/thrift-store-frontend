@@ -2,10 +2,10 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Upload, X, Check, Info } from "lucide-react"
+import { Upload, X, Check, Info, Loader2, Sparkles } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,13 +21,17 @@ import { toast } from "sonner"
 import { BACKEND_URL } from "@/config/config"
 import axios from "axios"
 import { useRouter } from "next/navigation"
+import { analyzeProductImage } from "@/services/gemini-services"
 
 
 export default function SellPage() {
   const [images, setImages] = useState<string[]>([])
+  const [imageFiles, setImageFiles] = useState<File[]>([])
   const [listingType, setListingType] = useState("fixed")
-  const [files, setFiles] = useState<File[]>([]);
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useState(false)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [analysisError, setAnalysisError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [product, setProduct] = useState({
     title : "",
@@ -46,34 +50,26 @@ export default function SellPage() {
 
   const handleImageRemove = (index: number) => {
     setImages((prev) => prev.filter((_, i) => i !== index))
+    setImageFiles((prev) => prev.filter((_, i) => i !== index))
   }
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = e.target.files;
-    if (selectedFiles) {
-      const maxSize = 5 * 1024 * 1024; // 5MB
+    const files = e.target.files
+    if (!files) return
 
-      for (const file of selectedFiles) {
-        if (file.size > maxSize) {
-          toast.error(`File size must not exceed 5MB.`);
-          return;
-        }
-      }
-
-      const newImages = Array.from(selectedFiles).map((file) =>
-        URL.createObjectURL(file)
-      );
-      setImages([...images, ...newImages]);
-      setFiles((f) => [...f, ...selectedFiles]);
+    const newFiles = Array.from(files)
+    if (newFiles.length + images.length > 5) {
+      alert("You can only upload up to 5 images")
+      return
     }
+
+    const newImages = newFiles.map((file) => URL.createObjectURL(file))
+    setImages((prev) => [...prev, ...newImages])
+    setImageFiles((prev) => [...prev, ...newFiles])
   }
 
-  const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index))
-  };
-
   const getSignedURLs = async () => {
-    const filenames = files.map((f) => {
+    const filenames = imageFiles.map((f) => {
       return {
         name: f.name,
         type: f.type
@@ -100,12 +96,12 @@ export default function SellPage() {
 
   const uploadFiles = async (preSignedUrls: { uploadUrl: string; publicUrl: string }[]) => {
     try {
-      if (!files || files.length === 0) {
+      if (!imageFiles || imageFiles.length === 0) {
         console.error("No files selected for upload.");
         return;
       }
   
-      const uploadPromises = files?.map(async (file, index) => {
+      const uploadPromises = imageFiles?.map(async (file, index) => {
         console.log(file);
         console.log(preSignedUrls[index].uploadUrl);
         
@@ -118,14 +114,6 @@ export default function SellPage() {
         const { uploadUrl } = preSignedUrls[index];
   
         try {
-          // const response = await fetch(uploadUrl, {
-          //   method: "PUT",
-          //   body: file,
-          //   headers: {
-          //     "Content-Type": file.type,
-          //     "x-goog-acl": "public-read", 
-          //   },
-          // });
           const response = await axios.put(uploadUrl, file, {
             headers : {
               "Content-Type" : file.type,
@@ -135,11 +123,6 @@ export default function SellPage() {
           console.log("res" , response);
           
   
-          // if (!response.ok) {
-          //   throw new Error(`Failed to upload ${file.name}: ${response.statusText}`);
-          // }
-  
-          console.log(`Uploaded ${file.name} successfully`);
         } catch (error) {
           console.error(`Error uploading ${file.name}:`, error);
         }
@@ -206,6 +189,36 @@ export default function SellPage() {
     // setTimeout(() => {
     //   window.scrollTo({ top: 0, behavior: "smooth" })
     // }, 500)
+  }
+
+  const analyzeWithAI = async () => {
+    if (imageFiles.length === 0) {
+      setAnalysisError("Please upload at least one image to analyze")
+      return
+    }
+
+    setIsAnalyzing(true)
+    setAnalysisError(null)
+
+    try {
+      // Use the first image for analysis
+      const analysis = await analyzeProductImage(imageFiles[0])
+
+      // Update form fields with AI analysis
+      setProduct(p => ({
+        ...p,
+        title: analysis.title || "",
+        description: analysis.description || "",
+        category: analysis.category || "",
+        condition: analysis.condition || "",
+        price: analysis.estimatedPrice || 0
+      }))
+    } catch (error) {
+      console.error("Error analyzing image:", error)
+      setAnalysisError("Failed to analyze image. Please try again or fill in details manually.")
+    } finally {
+      setIsAnalyzing(false)
+    }
   }
 
   return (
@@ -369,7 +382,39 @@ export default function SellPage() {
                 <h2 className="text-xl font-semibold mb-4">Photos</h2>
                 <div className="space-y-4">
                   <div className="grid gap-2">
-                    <Label>Upload Images (max 5)</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>Upload Images (max 5)</Label>
+                      {images.length > 0 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={analyzeWithAI}
+                          disabled={isAnalyzing}
+                          className="flex items-center gap-2"
+                        >
+                          {isAnalyzing ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Analyzing...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="h-4 w-4" />
+                              Analyze with AI
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </div>
+
+                    {analysisError && (
+                      <Alert className="mb-4 bg-red-50 border-red-200">
+                        <Info className="h-4 w-4 text-red-600" />
+                        <AlertDescription className="text-red-600">{analysisError}</AlertDescription>
+                      </Alert>
+                    )}
+
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                       {images.map((src, index) => (
                         <div key={index} className="relative aspect-square rounded-md overflow-hidden border bg-muted">
@@ -384,7 +429,7 @@ export default function SellPage() {
                             variant="destructive"
                             size="icon"
                             className="absolute top-1 right-1 h-6 w-6 rounded-full"
-                            onClick={() => removeImage(index)}
+                            onClick={() => handleImageRemove(index)}
                           >
                             <X className="h-3 w-3" />
                           </Button>
@@ -397,7 +442,13 @@ export default function SellPage() {
                             <Upload className="h-8 w-8 mb-2 text-muted-foreground" />
                             <span className="text-xs text-muted-foreground">Upload Image</span>
                           </div>
-                          <Input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} multiple/>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleImageUpload}
+                          />
                         </label>
                       )}
                     </div>
