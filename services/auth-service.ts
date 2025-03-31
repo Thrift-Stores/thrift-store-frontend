@@ -1,7 +1,13 @@
 // Service to handle authentication API calls
 import axios from "axios";
 
-const API_URL = "http://localhost:8080/api/auth";
+const API_URL = "https://thrift-store-backend-u1vz.onrender.com/api/auth";
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+}
 
 export interface RegisterData {
   username: string;
