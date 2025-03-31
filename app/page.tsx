@@ -5,8 +5,8 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Search, ArrowRight, BookOpen, Laptop, Bike, Home, PenToolIcon as Tool, Menu, X } from "lucide-react"
-import axios from "axios"
-import { BACKEND_URL } from "@/config/config"
+import { productService } from "@/services/product-service"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -29,29 +29,34 @@ export default function HomePage() {
   const [recentProducts, setRecentProducts] = useState<Product[]>([]);
   const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
   const [endingProducts, setEndingProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
+        setIsLoading(true);
         // Fetch recent products
-        const recentRes = await axios.get(`${BACKEND_URL}/api/product?sort=createdAt&order=desc&limit=4`);
-        if (recentRes?.data?.success) {
-          setRecentProducts(recentRes.data.data);
+        const recentRes = await productService.getRecentProducts();
+        if (recentRes?.success) {
+          setRecentProducts(recentRes.data);
         }
 
         // Fetch trending products (most viewed)
-        const trendingRes = await axios.get(`${BACKEND_URL}/api/product?sort=views&order=desc&limit=4`);
-        if (trendingRes?.data?.success) {
-          setTrendingProducts(trendingRes.data.data);
+        const trendingRes = await productService.getTrendingProducts();
+        if (trendingRes?.success) {
+          setTrendingProducts(trendingRes.data);
         }
 
         // Fetch ending soon products (auctions ending soon)
-        const endingRes = await axios.get(`${BACKEND_URL}/api/product?sort=endTime&order=asc&limit=4`);
-        if (endingRes?.data?.success) {
-          setEndingProducts(endingRes.data.data);
+        const endingRes = await productService.getEndingProducts();
+        if (endingRes?.success) {
+          setEndingProducts(endingRes.data);
         }
       } catch (error) {
         console.error("Error fetching products:", error);
+        toast.error("Failed to load products. Please try again later.");
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -104,6 +109,14 @@ export default function HomePage() {
       </CardContent>
     </Card>
   );
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col">
