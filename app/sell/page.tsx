@@ -21,7 +21,7 @@ import { toast } from "sonner"
 import { BACKEND_URL } from "@/config/config"
 import axios from "axios"
 import { useRouter } from "next/navigation"
-import { analyzeProductImage } from "@/services/gemini-services"
+import { analyzeProductImage, validateProductImage } from "@/services/gemini-services"
 
 
 export default function SellPage() {
@@ -32,6 +32,8 @@ export default function SellPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisError, setAnalysisError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [validationError, setValidationError] = useState<string | null>(null)
+  const [isValidating, setIsValidating] = useState(false)
 
   const [product, setProduct] = useState({
     title : "",
@@ -53,7 +55,7 @@ export default function SellPage() {
     setImageFiles((prev) => prev.filter((_, i) => i !== index))
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files) return
 
@@ -63,9 +65,36 @@ export default function SellPage() {
       return
     }
 
-    const newImages = newFiles.map((file) => URL.createObjectURL(file))
-    setImages((prev) => [...prev, ...newImages])
-    setImageFiles((prev) => [...prev, ...newFiles])
+    setIsValidating(true)
+    setValidationError(null)
+
+    try {
+      // Validate each new image before adding it
+      const validationPromises = newFiles.map(file => 
+        validateProductImage(file, product.title, product.category)
+      )
+
+      const validationResults = await Promise.all(validationPromises)
+      const invalidImages = validationResults.filter(result => !result.isGenuine)
+
+      if (invalidImages.length > 0) {
+        const issues = invalidImages.map(result => result.validationMessage).join("\n")
+        setValidationError(
+          `Some images were rejected:\n${issues}\n\nPlease upload appropriate product images only.`
+        )
+        return
+      }
+
+      // If all images are valid, add them to the state
+      const newImages = newFiles.map((file) => URL.createObjectURL(file))
+      setImages((prev) => [...prev, ...newImages])
+      setImageFiles((prev) => [...prev, ...newFiles])
+    } catch (error) {
+      console.error("Error validating images:", error)
+      setValidationError("Failed to validate images. Please try again.")
+    } finally {
+      setIsValidating(false)
+    }
   }
 
   const getSignedURLs = async () => {
@@ -142,53 +171,54 @@ export default function SellPage() {
     });
   };
 
-  const handleSubmit = async(e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Here you would normally send the data to your backend
-    console.log("Submitted data:", product)
-    // Reset form or redirect
-
-    let toastId = toast.loading("Uploading Images...");
+    setValidationError(null)
+    setIsValidating(true)
 
     try {
-      const urls = await getSignedURLs();
-      console.log(urls);
-      
-     try {
-      await uploadFiles(urls);
-     } catch (error) {
-      console.log(error);
-      return;
-      
-     }
-      toast.dismiss(toastId);
-      toast.success("Upload Successful!", {
-        description: "Your files have been uploaded successfully.",
-      });
+      // Validate all images before submission
+      const validationPromises = imageFiles.map(file => 
+        validateProductImage(file, product.title, product.category)
+      )
 
-      toastId = toast.loading("Saving Product...");
+      const validationResults = await Promise.all(validationPromises)
+      const invalidImages = validationResults.filter(result => !result.isGenuine)
 
-      product.images = getImageUrls(urls);
+      if (invalidImages.length > 0) {
+        setValidationError(
+          "Some images appear to be invalid or don't match the product description. Please review and update your images."
+        )
+        return
+      }
 
-      const res = await axios.post(`${BACKEND_URL}/api/product`, product, {
-        withCredentials: true,
-      });
-      console.log(res);
-      
+      // If validation passes, proceed with form submission
+      const formData = new FormData()
+      imageFiles.forEach((file) => {
+        formData.append("images", file)
+      })
 
-      if (res?.data?.success) {
-        toast.success(res?.data?.message);
-        router.push("/browse");
+      // Add other form fields
+      Object.entries(product).forEach(([key, value]) => {
+        formData.append(key, value.toString())
+      })
+
+      const response = await axios.post(`${BACKEND_URL}/api/product`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
+
+      if (response.status === 201) {
+        setSubmitted(true)
+        router.push("/dashboard")
       }
     } catch (error) {
-      // handleAxiosError(error);
-      console.log(error);
+      console.error("Error submitting form:", error)
+      setValidationError("Failed to submit listing. Please try again.")
     } finally {
-      toast.dismiss(toastId);
+      setIsValidating(false)
     }
-    // setTimeout(() => {
-    //   window.scrollTo({ top: 0, behavior: "smooth" })
-    // }, 500)
   }
 
   const analyzeWithAI = async () => {
@@ -383,7 +413,7 @@ export default function SellPage() {
                 <div className="space-y-4">
                   <div className="grid gap-2">
                     <div className="flex items-center justify-between">
-                      <Label>Upload Images (max 5)</Label>
+                    <Label>Upload Images (max 5)</Label>
                       {images.length > 0 && (
                         <Button
                           type="button"
@@ -439,8 +469,17 @@ export default function SellPage() {
                       {images.length < 5 && (
                         <label className="flex flex-col items-center justify-center aspect-square rounded-md border-2 border-dashed border-muted-foreground/25 bg-muted cursor-pointer hover:bg-muted/80 transition-colors">
                           <div className="flex flex-col items-center justify-center p-4 text-center">
+                            {isValidating ? (
+                              <>
+                                <Loader2 className="h-8 w-8 mb-2 text-muted-foreground animate-spin" />
+                                <span className="text-xs text-muted-foreground">Validating...</span>
+                              </>
+                            ) : (
+                              <>
                             <Upload className="h-8 w-8 mb-2 text-muted-foreground" />
                             <span className="text-xs text-muted-foreground">Upload Image</span>
+                              </>
+                            )}
                           </div>
                           <input
                             ref={fileInputRef}
@@ -448,6 +487,7 @@ export default function SellPage() {
                             accept="image/*"
                             className="hidden"
                             onChange={handleImageUpload}
+                            disabled={isValidating}
                           />
                         </label>
                       )}
@@ -527,9 +567,28 @@ export default function SellPage() {
               </Card>
           
 
+            {validationError && (
+              <Alert className="mb-8 bg-red-50 border-red-200">
+                <Info className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-600">{validationError}</AlertDescription>
+              </Alert>
+            )}
+
             <div className="flex flex-col space-y-4">
-              <Button type="submit" size="lg" className="bg-blue-600 hover:bg-blue-700">
-                Submit Listing
+              <Button 
+                type="submit" 
+                size="lg" 
+                className="bg-blue-600 hover:bg-blue-700"
+                disabled={isValidating}
+              >
+                {isValidating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Validating and Submitting...
+                  </>
+                ) : (
+                  "Submit Listing"
+                )}
               </Button>
               <p className="text-xs text-center text-muted-foreground">
                 By submitting this listing, you agree to our{" "}
